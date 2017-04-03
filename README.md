@@ -1,5 +1,5 @@
-[Cozy][cozy] <YOUR SUPER NEW KONNECTOR NAME>
-=======================================
+[Cozy][cozy] SFR mobile konnector
+=================================
 
 What's Cozy?
 ------------
@@ -12,7 +12,7 @@ What's Cozy?
 What's this new konnector?
 --------------------------
 
-<YOUR DESCRIPTION HERE>
+A connector to retrieve your SFR mobile bills and billing data and save them into your Cozy.
 
 ### Open a Pull-Request
 
@@ -57,7 +57,7 @@ Now run npm run dev one more time, you dont have to do the Oauth thing now, and 
 
 ### Maintainer
 
-The lead maintainers for this konnector is <YOUR NAME>
+The lead maintainers for this konnector is @doubleface
 
 
 ### Get in touch
@@ -73,7 +73,7 @@ You can reach the Cozy Community by:
 License
 -------
 
-<YOUR KONNECTOR NAME> is developed by @doubleface and distributed under the [AGPL v3 license][agpl-3.0].
+SFR mobile cozy konnector is developed by @doubleface and distributed under the [AGPL v3 license][agpl-3.0].
 
 [cozy]: https://cozy.io "Cozy Cloud"
 [agpl-3.0]: https://www.gnu.org/licenses/agpl-3.0.html
