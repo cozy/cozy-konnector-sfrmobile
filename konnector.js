@@ -1,13 +1,12 @@
 const request = require('request').defaults({
   jar: true
 })
-require('request-debug')(request)
+//require('request-debug')(request)
 const moment = require('moment')
 const cheerio = require('cheerio')
-const baseKonnector = require('./lib/base_konnector')
 
-const filterExisting = require('./lib/filter_existing')
-const saveDataAndFile = require('./lib/save_data_and_file')
+const {baseKonnector, fetcher, filterExisting, saveDataAndFile, models} = require('cozy-konnector-libs')
+const Bill = models.bill
 
 const log = require('printit')({
   prefix: 'Sfr mobile',
@@ -19,7 +18,6 @@ const fileOptions = {
   dateFormat: 'YYYYMMDD'
 }
 
-const Bill = require('./models/bill')
 
 // Konnector
 const connector = module.exports = baseKonnector.createNew({
