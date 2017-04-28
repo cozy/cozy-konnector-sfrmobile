@@ -20,49 +20,80 @@ If you want to work on this konnector and submit code modifications, feel free t
 
 ### Run
 
-If you have a running accessible cozy-stack you can test your the konnector without installing
+If you have a running accessible cozy-stack you can test your modifications to the konnector without installing
 and/or updating the konnector in the cozy-stack :
 
-You first need an installed nodejs (LTS version is fine)
+You first need an installed [nodejs] (LTS version is fine).
 
-Then just run :
+Then just run (but you need to have proper COZY_CREDENTIALS, COZY_URL and COZY_FIELDS environment variables):
 
 ```sh
-npm install
-npm start
+npm install --global yarn
 ```
+
+Then run (but you have to have proper COZY_CREDENTIALS, COZY_URL and COZY_FIELDS environment variables):
+
+```sh
+yarn
+yarn start
+```
+
+Where:
+ - COZY_CREDENTIALS needs to be the result of ```cozy-stack instances token-cli <instance name> <scope>```
+ - COZY_URL is the full http url to your cozy
+ - COZY_FIELDS is something like :
+```javascript
+{
+  "data":{
+    "attributes":{
+      "arguments":{
+        "account":"cf31eaef5d899404a7e8c3737c1c2d1f",
+        "folder_to_save":"folderPath",
+        "slug":"sfrmobile"
+      }
+    }
+  }
+}
+```
+
+The "account" field is the id of the record with doctype "io.cozy.accounts" which will be used as
+parameters for your konnector.
+
 ### Test
 
 If you do not want to have to install the konnector on a cozy v3 to test it, you can register the
 konnector as an OAuth application with the following commands :
 
 ```sh
-npm install
-npm run dev
+yarn
+yarn dev
 ```
 
 This command will register your konnector as an OAuth application to the cozy-stack. By default,
 the cozy-stack is supposed to be located in http://cozy.tools:8080. If this is not your case, just
-update the COZY_URL field in ./data/env.js.
+update the COZY_URL field in [./data/env.js].
 
-After that, your konnector is run but should not work since you did not specify an credentials to
-the target service. You can also do this in ./data/env.js by modifying the COZY_FIELDS attribute
-which is a JSON string.
+After that, your konnector is running but should not work since you did not specify any credentials to
+the target service. You can do this in a [./data/env_fields.json] (you have
+[./data/env_fields.json.template] available as a template).
 
-Now run npm run dev one more time, you dont have to do the Oauth thing now, and it should be ok
+Now run ```yarn init:dev:account``` to create an account in the targeted cozy which will be used by
+the connector (the id of the account is saved in ./data/account.txt)
+
+Now run `yarn dev` one more time, it should be ok.
 
 ### Hack
 
 If you do not want to need to have an accessible cozy-stack, just run :
 
 ```sh
-npm install
-npm run standalone
+yarn
+yarn standalone
 ```
 
-The requests to the cozy stack will be stubbed using the ./data/fixture.json file as source of data
-and when cozy-client-js is asked to create or update data, the data will be output to the console.
-The bills (or any file) will be saved in the ./data directory
+The requests to the cozy-stack will be stubbed using the [./data/fixture.json] file as source of data
+and when cozy-client is asked to create or update data, the data will be outputed to the console.
+The bills (or any file) will be saved in the ./data directory.
 
 ### Maintainer
 
@@ -89,4 +120,6 @@ SFR mobile cozy konnector is developed by @doubleface and distributed under the 
 [freenode]: http://webchat.freenode.net/?randomnick=1&channels=%23cozycloud&uio=d4
 [forum]: https://forum.cozy.io/
 [github]: https://github.com/cozy/
+[nodejs]: https://nodejs.org/
 [twitter]: https://twitter.com/mycozycloud
+[yarn]: https://yarnpkg.com
