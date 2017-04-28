@@ -5,6 +5,17 @@
   "slug": "sfrmobile",
   "description": "Get all the bills from SFR mobile",
   "source": "git://github.com/cozy/cozy-konnector-sfrmobile.git",
+  "fields": {
+    "save_folder": {
+      "doctype": "io.cozy.files",
+      "type": "folder"
+    },
+    "account": {
+      "doctype": "io.cozy.accounts",
+      "account_type": "sfr",
+      "accountFormat": "login,password"
+    }
+  },
   "locales": {
     "fr": {
       "description": "Récupère toutes vos factures",
