@@ -79,9 +79,7 @@ function logIn (requiredFields, bills, data, next) {
 
     // check if an element with class error-icon is present
     const $ = cheerio.load(body)
-    console.log($('#username').length)
     const badLogin = $('#username').length > 0
-    console.log(badLogin, 'badlogin')
     if (badLogin) {
       return next('LOGIN_FAILED')
     }
