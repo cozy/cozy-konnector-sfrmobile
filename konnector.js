@@ -5,21 +5,11 @@ const request = require('request').defaults({
 const moment = require('moment')
 const cheerio = require('cheerio')
 
-const {baseKonnector, filterExisting, saveDataAndFile, models} = require('cozy-konnector-libs')
+const {log, baseKonnector, filterExisting, saveDataAndFile, models} = require('cozy-konnector-libs')
 const Bill = models.bill
 
-const log = require('printit')({
-  prefix: 'Sfr mobile',
-  date: true
-})
-
-const fileOptions = {
-  vendor: 'SFR',
-  dateFormat: 'YYYYMMDD'
-}
-
 // Konnector
-const connector = module.exports = baseKonnector.createNew({
+module.exports = baseKonnector.createNew({
   name: 'SFR Mobile',
   vendorLink: 'espace-client.sfr.fr/facture-mobile/consultation',
   category: 'telecom',
@@ -27,7 +17,9 @@ const connector = module.exports = baseKonnector.createNew({
     hex: '#9E0017',
     css: 'linear-gradient(90deg, #EF0001 0%, #9E0017 100%)'
   },
+
   dataType: ['bill'],
+
   models: [Bill],
   fetchOperations: [
     getToken,
@@ -47,18 +39,18 @@ function getToken (requiredFields, bills, data, next) {
     method: 'GET'
   }
 
-  connector.logger.info('Getting the token on Sfr Website...')
+  log('info', 'Logging in on Sfr Website...')
 
   request(options, (err, res, body) => {
     if (err) {
-      connector.logger.info(err)
+      log('error', err)
       return next('token not found')
     }
 
     const $ = cheerio.load(body)
     data.token = $('input[name=lt]').val()
 
-    connector.logger.info('Token retrieved')
+    log('info', 'Token retrieved')
     return next()
   })
 }
@@ -78,15 +70,23 @@ function logIn (requiredFields, bills, data, next) {
     }
   }
 
-  connector.logger.info('Logging in on Sfr website...')
-
-  request(options, (err) => {
+  log('info', 'Logging in on Sfr website...')
+  request(options, (err, res, body) => {
     if (err) {
-      connector.logger.info(err)
-      return next('bad credentials')
+      log('error', err)
+      return next('LOGIN_FAILED')
     }
 
-    connector.logger.info('Successfully logged in.')
+    // check if an element with class error-icon is present
+    const $ = cheerio.load(body)
+    console.log($('#username').length)
+    const badLogin = $('#username').length > 0
+    console.log(badLogin, 'badlogin')
+    if (badLogin) {
+      return next('LOGIN_FAILED')
+    }
+
+    log('info', 'Successfully logged in.')
     return next()
   })
 }
@@ -94,18 +94,18 @@ function logIn (requiredFields, bills, data, next) {
 function fetchBillingInfo (requiredFields, bills, data, next) {
   const url = 'https://espace-client.sfr.fr/facture-mobile/consultation'
 
-  connector.logger.info('Fetch bill info')
+  log('info', 'Fetch bill info')
   const options = {
     method: 'GET',
     url
   }
   request(options, (err, res, body) => {
     if (err) {
-      log.error('An error occured while fetching bills')
-      log.raw(err)
+      log('error', 'An error occured while fetching bills')
+      log('error', err)
       return next('request error')
     }
-    connector.logger.info('Fetch bill info succeeded')
+    log('info', 'Fetch bill info succeeded')
 
     data.html = body
     return next()
@@ -141,7 +141,7 @@ function parsePage (requiredFields, bills, data, next) {
 
     bills.fetched.push(bill)
   } else {
-    connector.logger.info('wrong url for first PDF bill.')
+    log('info', 'wrong url for first PDF bill.')
   }
 
   $('#tab tr').each(function each () {
@@ -168,19 +168,19 @@ function parsePage (requiredFields, bills, data, next) {
       }
       bills.fetched.push(bill)
     } else {
-      connector.logger.info('wrong url for PDF bill.')
+      log('info', 'wrong url for PDF bill.')
     }
   })
 
-  connector.logger.info('Successfully parsed the page')
+  log('info', 'Successfully parsed the page')
   next()
 }
 
 function customFilterExisting (requiredFields, bills, data, next) {
-  filterExisting(log, Bill)(requiredFields, bills, data, next)
+  filterExisting(null, Bill)(requiredFields, bills, data, next)
 }
 
 function customSaveDataAndFile (requiredFields, bills, data, next) {
-  const fnsave = saveDataAndFile(log, Bill, fileOptions, ['bill'])
+  const fnsave = saveDataAndFile(null, Bill, 'sfr', ['bill'])
   fnsave(requiredFields, bills, data, next)
 }
