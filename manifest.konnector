@@ -3,7 +3,6 @@
   "name": "SFR mobile",
   "type": "node",
   "slug": "sfrmobile",
-  "description": "Get all the bills from SFR mobile",
   "source": "git://github.com/cozy/cozy-konnector-sfrmobile.git",
   "fields": {
     "save_folder": {
