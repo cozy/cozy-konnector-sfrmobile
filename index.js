@@ -130,7 +130,7 @@ function parsePage ($) {
 
   return getMoreBills()
   .then(() => {
-    return bluebird.map(trs, tr => {
+    return bluebird.mapSeries(trs, tr => {
       let link = $(tr).find('td').eq(1).find('a')
       if (link.length === 1) {
         link = baseURL + link.attr('href')
