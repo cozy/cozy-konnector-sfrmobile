@@ -114,7 +114,8 @@ git://github.com/cozy/cozy-konnector-sfrmobile.git#build
 
 ### Maintainer
 
-The lead maintainers for this konnector is @doubleface for Cozy Cloud
+The lead maintainer for this konnector is @doubleface for Cozy Cloud. Before,
+nicofrand, Frank Rousseau, SomeAverageDev, and ZeHiro have contributed.
 
 
 ### Get in touch
