@@ -104,7 +104,7 @@ This command will commit and push your built in the branch `build` fo your proje
 
 And your konnector can now be installed using the following url :
 
-git://github.com/cozy/cozy-konnector-redmobile.git#build
+git://github.com/cozy/cozy-konnector-sfrmobile.git#build
 
 ### Build using Travis CI
 
