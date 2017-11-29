@@ -54296,15 +54296,20 @@ function fetchBillsAttempts () {
 
 function fetchBillingInfo () {
   log('info', 'Fetching bill info')
-  return rq('https://espace-client.sfr.fr/facture-mobile/consultation')
-  .then($ => {
-    if ($('input[name^=TS01]').length > 0) {
-      // this is the case where the user identified himself with sfr login
-      log('error', 'This is not sfr mobile identifier')
+  return rq({
+    url: 'https://espace-client.sfr.fr/facture-mobile/consultation',
+    resolveWithFullResponse: true,
+    maxRedirects: 5 // avoids infinite redirection to facture-fixe if any
+  })
+  .then(response => {
+    // check that the page was not redirected to another sfr service
+    if (response.request.uri.path !== '/facture-mobile/consultation' || response.request.uri.hostname !== 'espace-client.sfr.fr') {
+      // this is the case where the user identified himself with other sfr login
+      log('error', 'This is not SFR mobile identifier')
       throw new Error('LOGIN_FAILED')
     }
 
-    return $
+    return response.body
   })
 }
 
