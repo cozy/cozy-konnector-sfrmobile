@@ -7,7 +7,8 @@ const {
   BaseKonnector,
   saveBills,
   request,
-  retry
+  retry,
+  errors
 } = require('cozy-konnector-libs')
 
 let rq = request({
@@ -52,6 +53,12 @@ function getToken() {
   return rq(
     'https://www.sfr.fr/bounce?target=//www.sfr.fr/sfr-et-moi/bounce.html&casforcetheme=mire-sfr-et-moi&mire_layer'
   )
+    .then($ => {
+      if ($('.g-recaptcha').length) {
+        throw new Error(errors.CHALLENGE_ASKED)
+      }
+      return $
+    })
     .then($ => $('input[name=lt]').val())
     .then(token => {
       log('debug', token, 'TOKEN')
