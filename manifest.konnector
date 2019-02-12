@@ -5,7 +5,7 @@
   "language": "node",
   "icon": "icon.png",
   "slug": "sfrmobile",
-  "source": "git://github.com/cozy/cozy-konnector-sfrmobile.git",
+  "source": "git://github.com/konnectors/sfrmobile.git",
   "editor": "Cozy",
   "vendor_link": "https://www.sfr.fr/cas/login",
   "categories": ["telecom"],
@@ -50,26 +50,40 @@
   "locales": {
     "fr": {
       "description": "Récupère toutes vos factures SFR mobile",
+      "long_description": "Récupère toutes vos factures SFR mobile",
       "permissions": {
+        "bank operations": {
+          "description": "Utilisé pour relier les factures à des operations bancaires"
+        },
         "bills": {
           "description": "Utilisé pour sauvegarder les données de facturation"
         },
         "files": {
           "description": "Utilisé pour sauvegarder les factures"
+        },
+        "accounts": {
+          "description": "Utilisé pour obtenir les données du compte"
         }
       }
     },
     "en": {
       "description": "Retrieves all your SFR mobile invoices",
       "permissions": {
+        "bank operations": {
+          "description": "Required to link bank operations to bills"
+        },
         "bills": {
-          "description": "Used to save billing data"
+          "description": "Required to save the bills data"
         },
         "files": {
-          "description": "Used to save invoices"
+          "description": "Required to save the bills"
+        },
+        "accounts": {
+          "description": "Required to get the account's data"
         }
       }
     }
   },
+  "banksTransactionRegExp": "\\bSFR MOBILE\\b",
   "manifest_version": "2"
 }

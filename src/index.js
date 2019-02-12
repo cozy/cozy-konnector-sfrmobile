@@ -4,105 +4,95 @@ const cheerio = require('cheerio')
 
 const {
   log,
-  BaseKonnector,
-  saveBills,
-  request,
+  CookieKonnector,
   retry,
-  errors
+  errors,
+  solveCaptcha
 } = require('cozy-konnector-libs')
 
-let rq = request({
-  cheerio: true,
-  json: false,
-  jar: true,
-  // debug: true,
-  headers: {}
-})
-
-module.exports = new BaseKonnector(function fetch(fields) {
-  return retry(getToken, {
-    interval: 5000,
-    throw_original: true
-  })
-    .then(token => logIn(token, fields))
-    .then(() =>
-      retry(fetchBillsAttempts, {
+class SfrConnector extends CookieKonnector {
+  async fetch(fields) {
+    if (!(await this.testSession())) {
+      const { form, $ } = await retry(this.getForm, {
         interval: 5000,
         throw_original: true,
-        // do not retry if we get the LOGIN_FAILED error code
-        predicate: err => err.message !== 'LOGIN_FAILED'
+        context: this
       })
-    )
-    .then(entries =>
-      saveBills(entries, fields.folderPath, {
-        timeout: Date.now() + 60 * 1000,
-        identifiers: 'SFR MOBILE'
-      })
-    )
-    .catch(err => {
-      // Connector is not in error if there is not entry in the end
-      // It may be simply an empty account
-      if (err.message === 'NO_ENTRY') return []
-      throw err
-    })
-})
 
-// Procedure to get the login token
-function getToken() {
-  log('info', 'Logging in on Sfr Website...')
-  return rq(
-    'https://www.sfr.fr/bounce?target=//www.sfr.fr/sfr-et-moi/bounce.html&casforcetheme=mire-sfr-et-moi&mire_layer'
-  )
-    .then($ => {
-      if ($('.g-recaptcha').length) {
-        throw new Error(errors.CHALLENGE_ASKED)
-      }
-      return $
-    })
-    .then($ => $('input[name=lt]').val())
-    .then(token => {
-      log('debug', token, 'TOKEN')
-      if (!token) throw new Error('BAD_TOKEN')
-      return token
-    })
-}
+      await this.logIn(form, fields, $)
+    }
 
-function logIn(token, fields) {
-  return rq({
-    method: 'POST',
-    url:
-      'https://www.sfr.fr/cas/login?domain=mire-sfr-et-moi&service=https://www.sfr.fr/accueil/j_spring_cas_security_check#sfrclicid=EC_mire_Me-Connecter',
-    form: {
-      lt: token,
-      execution: 'e1s1',
-      _eventId: 'submit',
+    const entries = await retry(this.fetchBillsAttempts, {
+      interval: 5000,
+      throw_original: true,
+      // do not retry if we get the LOGIN_FAILED error code
+      predicate: err => err.message !== 'LOGIN_FAILED',
+      context: this
+    })
+
+    await this.saveBills(entries, fields.folderPath, {
+      identifiers: ['SFR MOBILE']
+    })
+  }
+  async testSession() {
+    const $ = await this.request(
+      'https://espace-client.sfr.fr/facture-mobile/consultation'
+    )
+    return $('#loginForm').length === 0
+  }
+
+  async logIn(form, fields, $) {
+    const submitForm = {
+      ...form,
       username: fields.login,
       password: fields.password,
-      'remember-me': 'on',
-      identifier: ''
+      'remember-me': 'on'
     }
-  })
-    .then($ => {
-      if ($('#loginForm').length) throw new Error('bad login')
+
+    if ($('.g-recaptcha').length) {
+      submitForm['g-recaptcha-response'] = await solveCaptcha({
+        websiteKey: $('.g-recaptcha').data('sitekey'),
+        websiteURL: 'https://www.sfr.fr/cas/login'
+      })
+    }
+
+    const login$ = await this.request({
+      method: 'POST',
+      url:
+        'https://www.sfr.fr/cas/login?domain=mire-sfr&service=https%3A%2F%2Fwww.sfr.fr%2Fj_spring_cas_security_check#sfrclicid=EC_mire_Me-Connecter',
+      form: submitForm
     })
-    .catch(err => {
-      log('warn', err.message, 'Error while logging in')
-      throw new Error('LOGIN_FAILED')
-    })
+
+    if (login$('#loginForm').length) throw new Error(errors.LOGIN_FAILED)
+  }
+
+  fetchBillsAttempts() {
+    return fetchBillingInfo
+      .bind(this)()
+      .then(parsePage.bind(this))
+      .then(entries => {
+        if (entries.length === 0) throw new Error('NO_ENTRY')
+        return entries
+      })
+  }
+
+  async getForm() {
+    log('info', 'Logging in on Sfr Website...')
+    const $ = await this.request('https://www.sfr.fr/cas/login')
+
+    return { form: getFormData($('#loginForm')), $ }
+  }
 }
 
-function fetchBillsAttempts() {
-  return fetchBillingInfo()
-    .then(parsePage)
-    .then(entries => {
-      if (entries.length === 0) throw new Error('NO_ENTRY')
-      return entries
-    })
+function getFormData($form) {
+  return $form
+    .serializeArray()
+    .reduce((memo, input) => ({ ...memo, [input.name]: input.value }), {})
 }
 
 function fetchBillingInfo() {
   log('info', 'Fetching bill info')
-  return rq({
+  return this.request({
     url: 'https://espace-client.sfr.fr/facture-mobile/consultation',
     resolveWithFullResponse: true,
     maxRedirects: 5 // avoids infinite redirection to facture-fixe if any
@@ -159,17 +149,18 @@ function parsePage($) {
 
   function getMoreBills() {
     // find some more rows if any
-    return rq(`${baseURL}/facture-mobile/consultation/plusDeFactures`)
+    return this.request(`${baseURL}/facture-mobile/consultation/plusDeFactures`)
       .then($ => $('tr'))
       .then($trs => {
         if ($trs.length > trs.length) {
           trs = Array.from($trs)
-          return getMoreBills()
+          return getMoreBills.bind(this)()
         } else return Promise.resolve()
       })
   }
 
-  return getMoreBills()
+  return getMoreBills
+    .bind(this)()
     .then(() => {
       return bluebird.mapSeries(trs, tr => {
         let link = $(tr)
@@ -178,7 +169,7 @@ function parsePage($) {
           .find('a')
         if (link.length === 1) {
           link = baseURL + link.attr('href')
-          return rq(link).then($ =>
+          return this.request(link).then($ =>
             $('.sr-container-wrapper-m')
               .eq(0)
               .html()
@@ -231,3 +222,12 @@ function parsePage($) {
 function getFileName(date) {
   return `${date.format('YYYYMM')}_sfr.pdf`
 }
+
+const connector = new SfrConnector({
+  cheerio: true,
+  json: false,
+  // debug: true,
+  headers: {}
+})
+
+connector.run()
